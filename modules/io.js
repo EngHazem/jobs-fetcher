@@ -2,41 +2,63 @@ const fs = require('fs');
 const path = require('path');
 const createNewJob = require('../entities/Job');
 const dotenv = require('dotenv');
+const {
+    createInflate
+} = require('zlib');
 dotenv.config();
 
-const storageFile = process.env.STORAGE_PATH;
-const resolvedStorageFile = path.resolve(storageFile);
+const storagePath = process.env.STORAGE_PATH;
+const storageFile = process.env.STORAGE_FILE;
+const resolvedStorageFilePath = path.resolve([storagePath, storageFile].join(path.sep));
 
-function checkFileExistance() {
+async function checkPathExistance() {
+    let resolvedStoragePath = path.resolve(storagePath);
 
-    fs.access(storageFile, fs.F_OK, (err) => {
-        if (err) {
-            fs.writeFile(resolvedStorageFile, '', er => {
-                if (er) {
-                    console.error('er', er)
-                    return ''
-                }
-            })
-        }
-    })
+    try {
+        await fs.accessSync(resolvedStoragePath)
+    } catch (err) {
+        await fs.mkdirSync(resolvedStoragePath)
+    }
 }
 
-function saveToFile() {
-    let job = createNewJob();
-
-    checkFileExistance();
-    
-    fs.readFile(resolvedStorageFile, 'utf8', (err, data) => {
+async function writeToFile(content) {
+    await fs.writeFileSync(resolvedStorageFilePath, content, err => {
         if (err) {
             console.error(err)
-            return
+            return false;
         }
-        console.log(data)
-    })
 
-    return job;
+        return true;
+    });
+}
+
+async function appendToFile(content) {
+    await fs.appendFileSync(resolvedStorageFilePath, content, err => {
+        if (err) {
+            console.error(err)
+            return false;
+        }
+
+        return true;
+    });
+}
+
+async function readFileContent() {
+    try {
+        const data = await fs.readFileSync(resolvedStorageFilePath)
+
+        return data.toString();
+    } catch (err) {
+        let initContent = '[]'
+        appendToFile(initContent)
+
+        return initContent
+    }
 }
 
 module.exports = {
-    saveToFile
-}
+    writeToFile,
+    readFileContent,
+    checkPathExistance,
+    appendToFile,
+};

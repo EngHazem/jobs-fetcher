@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const asyncHandler = require('express-async-handler');
 const schedule = require('node-schedule');
-const serverApi = require('../modules/unsplash.js')
-const saveToFile = require('../modules/io').saveToFile;
+const serverApi = require('../modules/unsplash.js');
+const JobModel = require('../entities/Job');
 
 router.route('/').get((req, resp) => {
     resp.json({
@@ -15,21 +16,29 @@ router.route('/').get((req, resp) => {
         }
     })
 })
-.post((req, res, next) => {
-    const delay = 1/* 5 + Math.ceil(Math.floor(Math.random() * 295) / 5) * 5 */
+.post(async (req, res) => {
+    const delay = 5/* 5 + Math.ceil(Math.floor(Math.random() * 295) / 5) * 5 */
     const now = new Date();
     const runAt = new Date(now.getTime() + delay * 1000);
-
-    const job = schedule.scheduleJob(runAt, function(){
-        serverApi.photos
-            .getRandom({ query: 'food'})
-            .then((result) => {
-                console.log('new job', saveToFile());
-            })
-            .catch(() => {
-                console.log('something went wrong!');
+    
+    try {
+        JobModel.initJob().then(job => {
+            console.log('job', job);
+            schedule.scheduleJob(runAt, async () => {
+                console.log('gonna execute serverApi.photos...');
+                serverApi.photos
+                    .getRandom({ query: 'food'})
+                    .then(async result => {
+                        await JobModel.updateJob(job, {...result.response}, 'PROCESSED')
+                    })
+                    .catch(() => {
+                        console.log('something went wrong!');
+                });
+            });
         });
-    });
+    } catch (error) {
+        console.log('error', error);
+    }
 
     res.json({
         data: {
@@ -40,7 +49,7 @@ router.route('/').get((req, resp) => {
             message: `Job will get executed at ${runAt}`
         }
     })
-})
+});
 
 router.get('/create', (req, res) => {
     res.render('jobs/create');
