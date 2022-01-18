@@ -20,16 +20,11 @@ function createNewJob() {
 }
 
 async function updateJob(id, data, status) {
-    console.log('entered updateJob !!!');
     try {
         let content = await io.readFileContent();
         let jsonJobs = JSON.parse(content);
 
-        let myJobIndex = jsonJobs.findIndex(job => job.id === id);
-        let myJob = jsonJobs[myJobIndex];
-        if (!myJob) {
-            return false;
-        }
+        let [myJob, myJobIndex] = await fetchJob(id, jsonJobs)
 
         myJob.data = data;
         myJob.status = status;
@@ -37,28 +32,63 @@ async function updateJob(id, data, status) {
         jsonJobs[myJobIndex] = myJob
 
         await io.writeToFile(JSON.stringify(jsonJobs));
-    }
-    catch (err) {
+    } catch (err) {
         console.error(err);
     }
 }
 
 async function initJob() {
-    await io.checkPathExistance();
+    let jobsList;
 
-    let jobsList = await io.readFileContent();
+    try {
+        await io.checkPathExistance();
+    } catch (error) {
+        console.log('error', error);
+    }
+
+    try {
+        jobsList = await io.readFileContent();
+    } catch (error) {
+        console.log('error', error);
+    }
     jobsList = JSON.parse(jobsList);
 
     let job = createNewJob();
     jobsList.unshift(job);
 
-    await io.writeToFile(JSON.stringify(jobsList))
+    try {
+        await io.writeToFile(JSON.stringify(jobsList))
+    } catch (error) {
+        console.log('error', error);
+    }
 
     return job
+}
+
+async function fetchJob(id, jsonJobs = null) {
+    try {
+        await io.checkPathExistance();
+    } catch (error) {
+        console.log('error', error);
+    }
+    
+    if (!jsonJobs) {
+        let content = await io.readFileContent();
+        jsonJobs = JSON.parse(content);
+    }
+
+    let myJobIndex = jsonJobs.findIndex(job => job.id === id);
+    let myJob = jsonJobs[myJobIndex];
+    if (!myJob) {
+        return false;
+    }
+
+    return [myJob, myJobIndex];
 }
 
 module.exports = {
     initJob,
     createNewJob,
     updateJob,
+    fetchJob,
 }
