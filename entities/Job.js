@@ -68,19 +68,19 @@ async function initJob() {
 async function fetchJob(id, jsonJobs = null) {
     try {
         await io.checkPathExistance();
+
+        if (!jsonJobs) {
+            let content = await io.readFileContent();
+            jsonJobs = JSON.parse(content);
+        }
     } catch (error) {
         console.log('error', error);
-    }
-    
-    if (!jsonJobs) {
-        let content = await io.readFileContent();
-        jsonJobs = JSON.parse(content);
     }
 
     let myJobIndex = jsonJobs.findIndex(job => job.id === id);
     let myJob = jsonJobs[myJobIndex];
     if (!myJob) {
-        return false;
+        return [false, false];
     }
 
     return [myJob, myJobIndex];

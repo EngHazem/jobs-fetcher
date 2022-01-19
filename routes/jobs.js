@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const serverApi = require('../modules/unsplash.js');
 const JobModel = require('../entities/Job');
-const Image = require('../entities/Image')
+const Image = require('../entities/Image');
 
 router.route('/').get((req, resp) => {
     resp.json({
@@ -16,7 +16,7 @@ router.route('/').get((req, resp) => {
     })
 })
 .post(async (req, res) => {
-    const delay = 3/* 5 + Math.ceil(Math.floor(Math.random() * 295) / 5) * 5 */
+    const delay = 10/* 5 + Math.ceil(Math.floor(Math.random() * 295) / 5) * 5 */
     const now = new Date();
     const runAt = new Date(now.getTime() + delay * 1000);
     
@@ -29,7 +29,7 @@ router.route('/').get((req, resp) => {
 
     function delayedExec(job) {
         return new Promise(resolve => {
-            setTimeout(() => {
+            resolve(setTimeout(() => {
                 serverApi.photos
                 .getRandom({ query: 'food'})
                 .then(result => {
@@ -38,49 +38,44 @@ router.route('/').get((req, resp) => {
                 .catch((err) => {
                     console.log('err', err);
                 });
-            }, delay * 1000);
+            }, delay * 1000));
         });
     }
     
+    
     async function main() {
-        try {
-            let job = await initJobFn();
-            await delayedExec(job);
-        } catch (error) {
-            console.error(error);
-        }
-        
+        let job = await initJobFn();
+        await delayedExec(job);
+
         return job;
     }
 
     let job = await main();
 
     res.json({
-        data: job.id,
+        data: job,
         meta: {
             success: true,
             message: `Job will get executed at ${runAt}`
         }
-    })
+    });
 });
 
 router.get('/:id', async (req, res) => {
-    let job, ind;
     let response;
+
     try {
-        job, ind = await JobModel.fetchJob(req.params.id);
+        let [job, _] = await JobModel.fetchJob(req.params.id);
 
         if(!job) {
-            throw 'Job not found';
+            throw new Error('Job not found');
         }
-        console.log('job', job);
-        console.log('ind', ind);
 
         response = {
             data: job,
             meta: {
                 success: true,
-                message: 'Job retrieved successfully!'
+                message: job.status == 'PROCESSED' ? 'Job retrieved successfully!' : 'Job retireved but still pending unsplash image fetching.'
             }
         };
     } catch (error) {
@@ -90,7 +85,7 @@ router.get('/:id', async (req, res) => {
             data: {},
             meta: {
                 success: false,
-                message: error
+                message: error.message
             }
         };
     }
