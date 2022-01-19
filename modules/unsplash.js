@@ -1,8 +1,10 @@
 const createApi = require('unsplash-js').createApi;
 const nodeFetch = require('node-fetch');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const serverApi = createApi({
-  accessKey: 'ivbdSQr8D48gFjxRPono7oKgNzOLFme8DRtJ8RX_IgI',
+  accessKey: process.env.UNSPLASH_ACCESS_KEY,
   fetch: nodeFetch,
 });
 

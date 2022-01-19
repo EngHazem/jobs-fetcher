@@ -3,6 +3,9 @@ const app = express();
 const jobRouter = require('./routes/jobs').jobRouter
 const rateLimit = require('express-rate-limit');
 
+const dotenv = require('dotenv');
+dotenv.config();
+
 const limiter = rateLimit({
 	windowMs: 1000,
 	max: 2,

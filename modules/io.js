@@ -1,10 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const createNewJob = require('../entities/Job');
 const dotenv = require('dotenv');
-const {
-    createInflate
-} = require('zlib');
 dotenv.config();
 
 const storagePath = process.env.STORAGE_PATH;
