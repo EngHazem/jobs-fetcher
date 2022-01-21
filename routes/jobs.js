@@ -28,6 +28,7 @@ router.route('/').get((req, resp) => {
         }
 
         function delayedExec(job) {
+            // We could also create another endpoint to cancel a delayed execution by job id using clearTimeout
             return new Promise(resolve => {
                 resolve(setTimeout(() => {
                     serverApi.photos
@@ -71,7 +72,13 @@ router.route('/').get((req, resp) => {
     });
 
 router.get('/:id', async (req, res) => {
-    let response;
+    let response = {
+        data: {},
+        meta: {
+            success: false,
+            message: ''
+        }
+    };
 
     try {
         let [job, _] = await JobModel.fetchJob(req.params.id);
@@ -80,23 +87,12 @@ router.get('/:id', async (req, res) => {
             throw new Error('Job not found');
         }
 
-        response = {
-            data: job,
-            meta: {
-                success: true,
-                message: job.status == 'PROCESSED' ? 'Job retrieved successfully!' : 'Job retireved but still pending unsplash image fetching.'
-            }
-        };
-    } catch (error) {
-        console.error(error);
-
-        response = {
-            data: {},
-            meta: {
-                success: false,
-                message: error.message
-            }
-        };
+        response.data = job,
+        response.meta.success = true;
+        response.meta.message = job.status == 'PROCESSED' ? 'Job retrieved successfully!' : 'Job retireved but still pending unsplash image fetching.'
+    } catch (err) {
+        response.meta.message = err.message
+        console.error(err);
     }
 
     res.json(response);

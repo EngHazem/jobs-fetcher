@@ -13,7 +13,7 @@ function generateId(length = 5) {
 
 function createNewJob() {
     return {
-        id: generateId(),
+        id: generateId(8),
         status: 'PENDING',
         data: {}
     };
