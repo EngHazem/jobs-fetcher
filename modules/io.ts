@@ -1,7 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-const dotenv = require('dotenv');
-dotenv.config();
+import fs from 'fs'
+import path from 'path'
 
 /**
  * Here I used fs.promises.fn instead of fs.fnSync since the fnSync block the single thread loop while th IO operation is performed
@@ -12,8 +10,8 @@ const storagePath = process.env.STORAGE_PATH;
 const storageFile = process.env.STORAGE_FILE;
 const resolvedStorageFilePath = path.resolve([storagePath, storageFile].join(path.sep));
 
-async function checkPathExistance() {
-    let resolvedStoragePath = path.resolve(storagePath);
+export async function checkPathExistance() {
+    const resolvedStoragePath = path.resolve(storagePath);
 
     try {
         await fs.promises.access(resolvedStoragePath)
@@ -22,35 +20,21 @@ async function checkPathExistance() {
     }
 }
 
-async function writeToFile(content) {
-    await fs.promises.writeFile(resolvedStorageFilePath, content, err => {
-        if (err) {
-            console.error(err)
-            return false;
-        }
-
-        return true;
-    });
+export async function writeToFile(content) {
+    await fs.promises.writeFile(resolvedStorageFilePath, content);
 }
 
-async function appendToFile(content) {
-    await fs.promises.appendFile(resolvedStorageFilePath, content, err => {
-        if (err) {
-            console.error(err)
-            return false;
-        }
-
-        return true;
-    });
+export async function appendToFile(content: string) {
+    await fs.promises.appendFile(resolvedStorageFilePath, content);
 }
 
-async function readFileContent() {
+export async function readFileContent() {
     try {
         const data = await fs.promises.readFile(resolvedStorageFilePath)
 
         return data.toString();
     } catch (err) {
-        let initContent = '[]'
+        const initContent = '[]'
         appendToFile(initContent)
 
         return initContent

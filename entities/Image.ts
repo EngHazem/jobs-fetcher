@@ -1,4 +1,4 @@
-function create(img) {
+export default function create(img :any) {
     return {
         id: img.id,
         width: img.width,
@@ -8,8 +8,4 @@ function create(img) {
         alt_description: img.alt_description,
         urls: img.urls,
     };
-}
-
-module.exports = {
-    create,
 }
