@@ -40,7 +40,7 @@ $ npm run dev
     }
 ```
 ```
-    curl --location --request GET 'localhost:3000/jobs/:id'
+    curl --location --request GET 'localhost:3000/jobs/{id}'
     # Searches the stored jobs for a job with an ID equivalent to the passed ID parameter and returns the result.
 
     # Response sample (Processed Job)
@@ -73,7 +73,7 @@ $ npm run dev
             "message": "Job retrieved successfully!"
         }
     }
-    
+
 
     # Response sample (Pending Processing Job)
     {
