@@ -8,7 +8,7 @@
   "main": "dist/server.js",
   "scripts": {
     "start": "tsc && node dist/server.js",
-    "dev": "nodemon server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only server.ts",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,6 +20,7 @@
     "express-promise-router": "^4.1.1",
     "express-rate-limit": "^6.1.0",
     "node-fetch": "^2.6.1",
+    "ts-node-dev": "^1.1.8",
     "unsplash-js": "^7.0.15"
   },
   "devDependencies": {
