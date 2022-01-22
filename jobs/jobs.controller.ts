@@ -7,7 +7,7 @@ import Job from './job.interface';
 class JobsController {
     public path = '/jobs';
     public router = express.Router();
-    public delay = 3 /* 5 + Math.ceil(Math.floor(Math.random() * 295) / 5) * 5 */;
+    public delay = 5 + Math.ceil(Math.floor(Math.random() * 295) / 5) * 5;
 
     private job: Job;
 
