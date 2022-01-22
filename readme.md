@@ -21,7 +21,7 @@ $ npm run start
 $ npm run dev
 ```
 
-##Development Timeline
+## Development Timeline
 <table>
 <thead>
     <tr>
