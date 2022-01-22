@@ -4,7 +4,7 @@ A simple nodejs application that is intended for delayed jobs processing (Here w
 
 ## Installation
 - Create a [Unsplash](https://unsplash.com/developers) account and create an application.
-- Duplicate the `.env.example` to `.env` and add your application's access key to the `.env` file under the `UNSPLASH_ACCESS_KEY` key.
+- Rename the `.env.example` to `.env` and add your application's access key to the `.env` file under the `UNSPLASH_ACCESS_KEY` key.
 
 ```bash
 
@@ -16,7 +16,7 @@ Then..
 
 $ npm run start
 
-..or..
+# or
 
 $ npm run dev
 ```
