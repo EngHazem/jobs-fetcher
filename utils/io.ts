@@ -2,6 +2,11 @@ import fs from 'fs'
 import path from 'path'
 
 /**
+ * We can also implement a Lock/Unlock functionality to files to handle race conditions.
+ */
+
+
+/**
  * Here I used fs.promises.fn instead of fs.fnSync since the fnSync block the single thread loop while th IO operation is performed
  * while the fs.promises.fn version (e.g when reading a file), it does it in chunks allowing the event loop to serve other events..
  */
@@ -20,7 +25,7 @@ export async function checkPathExistance() {
     }
 }
 
-export async function writeToFile(content) {
+export async function writeToFile(content: string) {
     await fs.promises.writeFile(resolvedStorageFilePath, content);
 }
 
@@ -28,7 +33,7 @@ export async function appendToFile(content: string) {
     await fs.promises.appendFile(resolvedStorageFilePath, content);
 }
 
-export async function readFileContent() {
+export async function readFileContent(): Promise<string> {
     try {
         const data = await fs.promises.readFile(resolvedStorageFilePath)
 

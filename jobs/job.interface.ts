@@ -1,4 +1,4 @@
-import Image from "../images/image.interface";
+import { Basic as Image } from "unsplash-js/dist/methods/photos/types";
 
 interface Job {
     id: string;

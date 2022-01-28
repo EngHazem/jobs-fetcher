@@ -1,15 +1,14 @@
-import express, { Request, Response } from 'express';
-import Image from '../images/image.interface';
+import express, { Request, Response, Router } from 'express';
+import { Random } from 'unsplash-js/dist/methods/photos/types';
+import { Basic as Image } from "unsplash-js/dist/methods/photos/types";
 import { checkPathExistance, readFileContent, writeToFile } from '../utils/io';
 import { serverApi } from '../utils/unsplash';
 import Job from './job.interface';
 
 class JobsController {
     public path = '/jobs';
-    public router = express.Router();
-    public delay = 5 + Math.ceil(Math.floor(Math.random() * 295) / 5) * 5;
-
-    private job: Job;
+    public router: Router = express.Router();
+    public delay: number;
 
     constructor() {
         this.intializeRoutes();
@@ -40,6 +39,17 @@ class JobsController {
         return result;
     }
 
+    /**
+     * Resets the delay time
+     */
+    resetDelay = () => {
+        this.delay = 5 + Math.ceil(Math.floor(Math.random() * 295) / 5) * 5;
+    }
+    
+    /**
+     * Returns the time at wthich a job is going to be processed
+     * @returns DateTime
+     */
     runAt = (): Date => {
         const now = new Date();
         const runAt = new Date(now.getTime() + this.delay * 1000);
@@ -50,7 +60,7 @@ class JobsController {
     /**
      * Delayed execution implementation
      */
-    processJob = () => {
+    processJob = (job: Job) => {
         // We could also create another endpoint to cancel a delayed execution by job id using clearTimeout()
         setTimeout(() => {
              serverApi.photos
@@ -58,12 +68,13 @@ class JobsController {
                         query: 'food'
                     })
                     .then(result => {
-                        const {id,width,height,urls,color,description,alt_description,user} = <any>result.response;
-                        const imageResponse = <Image>{id,width,height,urls,color,description,alt_description,user: {username: user.username, name: user.name}}
+                        const {alt_description, blur_hash ,color ,description ,height ,likes ,links ,promoted_at, width} = <Random>result.response;
+                        const imageResponse = <Image>{alt_description, blur_hash ,color ,description ,height ,likes ,links ,promoted_at, width}
 
-                        this.updateJob(imageResponse)
+                        this.updateJob(job, imageResponse)
                     })
                     .catch((err) => {
+                        // We can set the job status to FAILED in case unsplash fetching failure.
                         console.error(err);
 
                         throw err
@@ -74,10 +85,12 @@ class JobsController {
     /**
      * Creates a job and triggers the delayed execution
      */
-    createJob = async () => {
+    createJob = async (): Promise<Job> => {
         try {
-            await this.initJob();
-            this.processJob();
+            const job: Job = await this.initJob();
+            this.processJob(job);
+
+            return job
         } catch (err) {
             console.error(err.message);
         }
@@ -89,10 +102,12 @@ class JobsController {
      * @param res 
      */
     handleJobPost = async (req: Request, res: Response) => {
-        await this.createJob();
+        this.resetDelay();
+
+        const job = await this.createJob();
         
         res.json({
-            data: this.job,
+            data: job,
             meta: {
                 success: true,
                 message: `Job will get executed at ${this.runAt()}`
@@ -116,24 +131,24 @@ class JobsController {
      * Updates the stored Job
      * @param data 
      */
-    updateJob = async (data: Image) => {
+    updateJob = async (job: Job, data: Image) => {
         try {
             const content = await readFileContent();
-            const jsonJobs = JSON.parse(content);
+            const jsonJobs: Job[] = JSON.parse(content);
 
-            const [myJob, myJobIndex] = await this.fetchJob(this.job.id, <Array<Job>>jsonJobs)
+            const [myJob, myJobIndex] = await this.fetchJob(job.id, jsonJobs)
 
-            if (typeof myJob != 'boolean' && typeof myJobIndex == 'number') {
+            if (typeof myJob !== 'boolean' && typeof myJobIndex == 'number') {
                 myJob.data = data;
                 
                 myJob.status = 'PROCESSED';
                 jsonJobs[myJobIndex] = myJob
-                this.job = myJob
+                job = myJob
 
                 await writeToFile(JSON.stringify(jsonJobs));
             }
             else {
-                throw Error(`Job with ID ${this.job.id} does not exist!`)
+                throw Error(`Job with ID ${job.id} does not exist!`)
             }
 
         } catch (err) {
@@ -144,8 +159,8 @@ class JobsController {
     /**
      * Creates an initial Job Object
      */
-    initJob = async () => {
-        let jobsList;
+    initJob = async (): Promise<Job> => {
+        let jobsList: string;
 
         try {
             await checkPathExistance();
@@ -158,16 +173,18 @@ class JobsController {
         } catch (error) {
             console.log('error', error);
         }
-        jobsList = JSON.parse(jobsList);
+        const jobsListJSON: Job[] = JSON.parse(jobsList);
 
-        this.job = this.createNewJob();
-        jobsList.unshift(this.job);
+        const job: Job = this.createNewJob();
+        jobsListJSON.unshift(job);
 
         try {
-            await writeToFile(JSON.stringify(jobsList))
+            await writeToFile(JSON.stringify(jobsListJSON))
         } catch (error) {
             console.log('error', error);
         }
+
+        return job
     }
 
     /**
@@ -186,7 +203,7 @@ class JobsController {
 
         try {
             const [job] = await this.fetchJob(req.params.id);
-            if (typeof job != 'boolean') {
+            if (typeof job != 'boolean') {                
                 response.data = job;
                 response.meta.success = true;
                 response.meta.message = job.status == 'PROCESSED' ? 'Job retrieved successfully!' : 'Job retireved but still pending unsplash image fetching.'
@@ -213,12 +230,12 @@ class JobsController {
             await checkPathExistance();
 
             if (!jsonJobs) {
-                const content = await readFileContent();
+                const content: string = await readFileContent();
                 jsonJobs = JSON.parse(content);
             }
 
             const myJobIndex = jsonJobs.findIndex(job => job.id === id);
-            const myJob = <Job>jsonJobs[myJobIndex];
+            const myJob = jsonJobs[myJobIndex];
 
             if (!myJob) {
                 return [false, false];
